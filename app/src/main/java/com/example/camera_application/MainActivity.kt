@@ -10,8 +10,10 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.camera.core.CameraProvider
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -34,6 +36,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var outputDirectory: File
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var viewFinder: PreviewView
+    private lateinit var toggleFlashlight: ImageButton
+    private var clickCount = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.hide()
 
         viewFinder = findViewById(R.id.viewFinder)
+        toggleFlashlight = findViewById(R.id.toggleFlashlight)
 
         if (allPermissionsGranted()) {
             startCamera()
@@ -50,13 +55,12 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSION, REQUEST_CODE_PERMISSION)
         }
 
-        findViewById<Button>(R.id.captureButton).setOnClickListener{
+        findViewById<Button>(R.id.captureButton).setOnClickListener {
             takePhoto()
         }
 
-        outputDirectory=getOutputDirectory()
-        cameraExecutor=Executors.newSingleThreadExecutor()
-
+        outputDirectory = getOutputDirectory()
+        cameraExecutor = Executors.newSingleThreadExecutor()
 
 
     }
@@ -65,31 +69,31 @@ class MainActivity : AppCompatActivity() {
 
         val imageCapture = imageCapture ?: return
 
-        val photoFile=File(
+        val photoFile = File(
             outputDirectory,
-            SimpleDateFormat(FILENAME_FORMAT,Locale.US).format(System.currentTimeMillis())+".jpg"
+            SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis()) + ".jpg"
         )
 
-        val outputOption=ImageCapture.OutputFileOptions.Builder(photoFile).build()
+        val outputOption = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
         imageCapture.takePicture(
             outputOption,
             ContextCompat.getMainExecutor(this),
-            object : ImageCapture.OnImageSavedCallback{
+            object : ImageCapture.OnImageSavedCallback {
 
                 override fun onError(exc: ImageCaptureException) {
-                    Log.e(TAG,"photo capture failed : ${exc.message}",exc)
+                    Log.e(TAG, "photo capture failed : ${exc.message}", exc)
                 }
 
-                override fun onImageSaved(output: ImageCapture.OutputFileResults){
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(photoFile)
 
                     findViewById<ImageView>(R.id.capture).visibility = View.VISIBLE
                     findViewById<ImageView>(R.id.capture).setImageURI(savedUri)
 
                     val msg = "photo capture succeded : $savedUri"
-                Toast.makeText(baseContext,msg,Toast.LENGTH_LONG).show()
-                    Log.d(TAG,msg)
+                    Toast.makeText(baseContext, msg, Toast.LENGTH_LONG).show()
+                    Log.d(TAG, msg)
                 }
 
             }
@@ -117,6 +121,27 @@ class MainActivity : AppCompatActivity() {
             } catch (exc: Exception) {
                 Log.e(Tag, "Use case binding failed", exc)
             }
+
+            val camera =
+                cameraProvider?.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+            val hasFlashUnit = camera?.cameraInfo?.hasFlashUnit()
+
+
+            toggleFlashlight.setOnClickListener {
+
+                if (hasFlashUnit == true && clickCount==1) {
+
+                    camera.cameraControl.enableTorch(true)
+                    clickCount=0
+
+                } else {
+                    camera?.cameraControl?.enableTorch(false)
+                    clickCount=1
+
+                }
+
+            }
+
         }, ContextCompat.getMainExecutor(this))
     }
 
@@ -124,12 +149,12 @@ class MainActivity : AppCompatActivity() {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun getOutputDirectory():File{
+    private fun getOutputDirectory(): File {
 
-        val mediaDir=externalMediaDirs.firstOrNull()?.let {
+        val mediaDir = externalMediaDirs.firstOrNull()?.let {
             File(it, resources.getString(R.string.app_name)).apply { mkdir() }
         }
-        return if(mediaDir!= null && mediaDir.exists())
+        return if (mediaDir != null && mediaDir.exists())
             mediaDir else filesDir
     }
 
@@ -159,7 +184,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-    cameraExecutor.shutdown()
+        cameraExecutor.shutdown()
     }
+
 
 }
