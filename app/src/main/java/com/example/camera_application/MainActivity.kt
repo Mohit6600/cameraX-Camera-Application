@@ -38,6 +38,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewFinder: PreviewView
     private lateinit var toggleFlashlight: ImageButton
     private var clickCount = 1
+    var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+    /*  private var lensFacing = CameraSelector.LENS_FACING_BACK*/
+    lateinit var switchCameraBtn: ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,9 +52,10 @@ class MainActivity : AppCompatActivity() {
 
         viewFinder = findViewById(R.id.viewFinder)
         toggleFlashlight = findViewById(R.id.toggleFlashlight)
+        switchCameraBtn = findViewById(R.id.changeCameraButton)
 
         if (allPermissionsGranted()) {
-            startCamera()
+            startCamera(cameraSelector)
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSION, REQUEST_CODE_PERMISSION)
         }
@@ -62,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         outputDirectory = getOutputDirectory()
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        switchCamera()
 
     }
 
@@ -101,7 +107,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun startCamera() {
+    private fun startCamera(cameraSelector: CameraSelector) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
@@ -113,7 +119,7 @@ class MainActivity : AppCompatActivity() {
 
             imageCapture = ImageCapture.Builder().build()
 
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
 
             try {
                 cameraProvider.unbindAll()
@@ -126,17 +132,17 @@ class MainActivity : AppCompatActivity() {
                 cameraProvider?.bindToLifecycle(this, cameraSelector, preview, imageCapture)
             val hasFlashUnit = camera?.cameraInfo?.hasFlashUnit()
 
-
+// this code is used for flash light option
             toggleFlashlight.setOnClickListener {
 
-                if (hasFlashUnit == true && clickCount==1) {
+                if (hasFlashUnit == true && clickCount == 1) {
 
                     camera.cameraControl.enableTorch(true)
-                    clickCount=0
+                    clickCount = 0
 
                 } else {
                     camera?.cameraControl?.enableTorch(false)
-                    clickCount=1
+                    clickCount = 1
 
                 }
 
@@ -166,7 +172,7 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSION) {
             if (allPermissionsGranted()) {
-                startCamera()
+                startCamera(cameraSelector)
             } else {
                 Toast.makeText(this, "Permission not granted by the user", Toast.LENGTH_SHORT)
                     .show()
@@ -186,6 +192,29 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         cameraExecutor.shutdown()
     }
+
+     private fun switchCamera(){
+
+
+
+             switchCameraBtn.setOnClickListener {
+
+                 cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+
+                     CameraSelector.DEFAULT_FRONT_CAMERA
+
+                 } else {
+
+                     CameraSelector.DEFAULT_BACK_CAMERA
+
+                 }
+
+                 startCamera(cameraSelector)
+
+             }
+
+
+     }
 
 
 }
