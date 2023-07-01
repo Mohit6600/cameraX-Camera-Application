@@ -13,7 +13,6 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.camera.core.CameraProvider
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -26,7 +25,6 @@ import java.io.File
 import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -40,7 +38,6 @@ class MainActivity : AppCompatActivity() {
     private var clickCount = 1
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-    /*  private var lensFacing = CameraSelector.LENS_FACING_BACK*/
     lateinit var switchCameraBtn: ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -195,8 +192,6 @@ class MainActivity : AppCompatActivity() {
 
      private fun switchCamera(){
 
-
-
              switchCameraBtn.setOnClickListener {
 
                  cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
@@ -212,7 +207,6 @@ class MainActivity : AppCompatActivity() {
                  startCamera(cameraSelector)
 
              }
-
 
      }
 
