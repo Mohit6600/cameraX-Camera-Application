@@ -8,8 +8,11 @@ import android.icu.text.SimpleDateFormat
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.view.View
 import androidx.camera.core.CameraSelector
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -28,6 +31,8 @@ import androidx.core.content.PermissionChecker
 import com.example.camera_application.databinding.ActivityVideoRecorderBinding
 import java.lang.Exception
 import java.util.Locale
+import java.util.Timer
+import java.util.TimerTask
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -43,6 +48,8 @@ class VideoRecorder : AppCompatActivity() {
     var clickCount = 1
     private val pickImage = 100
     private var videoUri: Uri? = null
+    private var timer: Timer? = null
+    private var recorderSecondsElapsed=0
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -72,8 +79,15 @@ class VideoRecorder : AppCompatActivity() {
 
         }
 
+        viewBinding.cameraCam.setOnClickListener {
+
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+        }
+
 
         switchCamera2()
+
 
     }
 
@@ -86,6 +100,8 @@ class VideoRecorder : AppCompatActivity() {
         if (curRecording != null) {
             curRecording.stop()
             recording = null
+            stopTimer()
+            resetTimer()
             return
         }
 
@@ -121,6 +137,7 @@ class VideoRecorder : AppCompatActivity() {
                             text = getString(R.string.stop_capture)
                             isEnabled = true
                         }
+                        startTimer()
                     }
 
                     is VideoRecordEvent.Finalize -> {
@@ -138,6 +155,7 @@ class VideoRecorder : AppCompatActivity() {
                             text = getString(R.string.start_capture)
                             isEnabled = true
                         }
+                        stopTimer()
                     }
                 }
             }
@@ -280,5 +298,44 @@ class VideoRecorder : AppCompatActivity() {
         }
 
     }
-}
+
+    private fun startTimer() {
+        stopTimer()
+        timer = Timer()
+        timer?.scheduleAtFixedRate(object : TimerTask(){
+            override fun run() {
+               /*viewBinding.timerTxt.visibility= View.GONE*/
+                updateTimer()
+            }
+
+        },0,1000)
+        }
+
+    private fun stopTimer(){
+        if(timer != null){
+            timer?.cancel()
+            timer?.purge()
+            timer = null
+        }
+    }
+
+    private fun updateTimer() {
+        Handler(Looper.getMainLooper()).post {
+            val minutes = recorderSecondsElapsed / 60
+            val seconds = recorderSecondsElapsed % 60
+            val timeString = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
+            viewBinding.timerTxt.text = timeString
+            recorderSecondsElapsed++
+        }
+    }
+
+    private fun resetTimer(){
+
+        recorderSecondsElapsed = 0
+        updateTimer()
+
+    }
+
+    }
+
 
