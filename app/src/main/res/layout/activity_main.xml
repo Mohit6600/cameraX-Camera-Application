@@ -26,7 +26,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginRight="50dp"
         android:layout_marginBottom="50dp"
-        android:visibility="gone"/>
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/captureButton"
@@ -46,12 +46,12 @@
         android:layout_height="60dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
-        android:layout_marginRight="50dp"
         android:layout_marginTop="15dp"
+        android:layout_marginRight="40dp"
         android:backgroundTint="#00FFFFFF"
+        android:foreground="?android:attr/selectableItemBackground"
         android:scaleType="fitCenter"
-        android:src="@drawable/baseline_flash_off_24"
-        android:foreground="?android:attr/selectableItemBackground"/>
+        android:src="@drawable/baseline_flash_off_24" />
 
     <ImageButton
         android:id="@+id/changeCameraButton"
@@ -59,11 +59,34 @@
         android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginLeft="40dp"
+        android:layout_marginLeft="50dp"
         android:layout_marginBottom="40dp"
         android:layout_toRightOf="@id/captureButton"
         android:backgroundTint="#00FFFFFF"
+        android:foreground="?android:attr/selectableItemBackground"
         android:scaleType="fitCenter"
-        android:src="@drawable/baseline_flip_camera_android_24"
-        android:foreground="?android:attr/selectableItemBackground"/>
+        android:src="@drawable/baseline_flip_camera_android_24" />
+
+    <ImageButton
+        android:id="@+id/chooseImage"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="40dp"
+        android:layout_toLeftOf="@id/captureButton"
+        android:backgroundTint="#00FFFFFF"
+        android:layout_marginRight="50dp"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:scaleType="fitCenter"
+        android:src="@drawable/baseline_image_24" />
+
+    <ImageButton
+        android:id="@+id/videoCam"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="15dp"
+        android:layout_marginLeft="40dp"
+        android:backgroundTint="#00000000"
+        android:scaleType="fitCenter"
+        android:src="@drawable/baseline_videocam_24" />
 </RelativeLayout>

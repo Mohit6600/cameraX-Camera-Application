@@ -1,12 +1,13 @@
 package com.example.camera_application
 
-
 import android.content.pm.PackageManager
 import android.Manifest
 import android.content.ContentValues.TAG
+import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -39,6 +40,9 @@ class MainActivity : AppCompatActivity() {
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     lateinit var switchCameraBtn: ImageButton
+    private val pickImage = 100
+    private var imageUri: Uri? = null
+    lateinit var chooseImage:ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,6 +54,8 @@ class MainActivity : AppCompatActivity() {
         viewFinder = findViewById(R.id.viewFinder)
         toggleFlashlight = findViewById(R.id.toggleFlashlight)
         switchCameraBtn = findViewById(R.id.changeCameraButton)
+        chooseImage=findViewById(R.id.chooseImage)
+        val videoCam = findViewById<ImageButton>(R.id.videoCam)
 
         if (allPermissionsGranted()) {
             startCamera(cameraSelector)
@@ -65,6 +71,22 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
 
         switchCamera()
+
+        chooseImage.setOnClickListener {
+
+            val gallery = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI)
+
+            startActivityForResult(gallery, pickImage)
+
+        }
+
+        videoCam.setOnClickListener{
+
+           val intent = Intent(this,VideoRecorder::class.java)
+            startActivity(intent)
+
+        }
+
 
     }
 
@@ -190,25 +212,39 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor.shutdown()
     }
 
-     private fun switchCamera(){
+    private fun switchCamera() {
 
-             switchCameraBtn.setOnClickListener {
+        switchCameraBtn.setOnClickListener {
 
-                 cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+            cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
 
-                     CameraSelector.DEFAULT_FRONT_CAMERA
+                CameraSelector.DEFAULT_FRONT_CAMERA
 
-                 } else {
+            } else {
 
-                     CameraSelector.DEFAULT_BACK_CAMERA
+                CameraSelector.DEFAULT_BACK_CAMERA
 
-                 }
+            }
 
-                 startCamera(cameraSelector)
+            startCamera(cameraSelector)
 
-             }
+        }
 
-     }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == RESULT_OK && requestCode == pickImage) {
+            imageUri = data?.data
+            /* imageView.setImageURI(imageUri)*/     // it used to show the image above preview screen
 
 
+            val intent = Intent(this, ImageFullScreenActivity::class.java)
+
+            intent.putExtra("imageUri", imageUri.toString())
+            startActivity(intent)
+
+        }
+
+    }
 }

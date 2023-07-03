@@ -50,5 +50,19 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
+    <ImageButton
+        android:id="@+id/chooseImage2"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginLeft="40dp"
+        android:layout_marginBottom="25dp"
+        android:layout_toLeftOf="@id/videoCaptureBtn"
+        android:backgroundTint="#00FFFFFF"
+        android:src="@drawable/baseline_image_24"
+        android:scaleType="fitCenter"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:foreground="?android:attr/selectableItemBackground"/>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

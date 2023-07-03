@@ -2,8 +2,10 @@ package com.example.camera_application
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.icu.text.SimpleDateFormat
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -36,8 +38,11 @@ class VideoRecorder : AppCompatActivity() {
     private var videoCapture: androidx.camera.video.VideoCapture<Recorder>? = null
     private var recording: Recording? = null
     private lateinit var cameraExecutor: ExecutorService
-    lateinit var viewFinder : androidx.camera.view.PreviewView
+    lateinit var viewFinder: androidx.camera.view.PreviewView
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    var clickCount = 1
+    private val pickImage = 100
+    private var videoUri: Uri? = null
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -59,6 +64,15 @@ class VideoRecorder : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
+        viewBinding.chooseImage2.setOnClickListener {
+
+            val gallery = Intent(Intent.ACTION_PICK, MediaStore.Video.Media.INTERNAL_CONTENT_URI)
+
+            startActivityForResult(gallery, pickImage)
+
+        }
+
+
         switchCamera2()
 
     }
@@ -69,7 +83,7 @@ class VideoRecorder : AppCompatActivity() {
         viewBinding.videoCaptureBtn.isEnabled = false
 
         val curRecording = recording
-        if (curRecording != null){
+        if (curRecording != null) {
             curRecording.stop()
             recording = null
             return
@@ -78,17 +92,24 @@ class VideoRecorder : AppCompatActivity() {
         val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis())
 
         val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME,name)
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P){
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
                 put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
             }
         }
-        val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(contentResolver,MediaStore.Video.Media.EXTERNAL_CONTENT_URI).setContentValues(contentValues).build()
+        val mediaStoreOutputOptions = MediaStoreOutputOptions.Builder(
+            contentResolver,
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        ).setContentValues(contentValues).build()
 
-        recording = videoCapture.output.prepareRecording(this,mediaStoreOutputOptions).apply{
+        recording = videoCapture.output.prepareRecording(this, mediaStoreOutputOptions).apply {
 
-            if (PermissionChecker.checkSelfPermission(this@VideoRecorder,Manifest.permission.RECORD_AUDIO)==PermissionChecker.PERMISSION_GRANTED){
+            if (PermissionChecker.checkSelfPermission(
+                    this@VideoRecorder,
+                    Manifest.permission.RECORD_AUDIO
+                ) == PermissionChecker.PERMISSION_GRANTED
+            ) {
                 withAudioEnabled()
             }
         }
@@ -101,6 +122,7 @@ class VideoRecorder : AppCompatActivity() {
                             isEnabled = true
                         }
                     }
+
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
                             val msg =
@@ -138,7 +160,7 @@ class VideoRecorder : AppCompatActivity() {
 
             videoCapture = androidx.camera.video.VideoCapture.withOutput(recorder)
 
-       /*     val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA*/
+            /*     val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA*/
 
             try {
                 cameraProvider.unbindAll()
@@ -148,6 +170,29 @@ class VideoRecorder : AppCompatActivity() {
 
                 Log.e(TAG, "Use case binding failed", exc)
             }
+
+// it is used for flash light start
+            val camera =
+                cameraProvider?.bindToLifecycle(this, cameraSelector, preview, videoCapture)
+            val hasFlashUnit = camera?.cameraInfo?.hasFlashUnit()
+
+            viewBinding.toggleFlashlight2.setOnClickListener {
+
+                if (hasFlashUnit == true && clickCount == 1) {
+
+                    camera.cameraControl.enableTorch(true)
+                    clickCount = 0
+
+                } else {
+                    camera?.cameraControl?.enableTorch(false)
+                    clickCount = 1
+
+                }
+
+            }
+
+            // end the above code used for flash light
+
         }, ContextCompat.getMainExecutor(this))
 
 
@@ -160,11 +205,12 @@ class VideoRecorder : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSION){
-            if (allPermissionGranted()){
+        if (requestCode == REQUEST_CODE_PERMISSION) {
+            if (allPermissionGranted()) {
                 startCamera(cameraSelector)
-            }else{
-                Toast.makeText(this,"Permissions not granted by the user.",Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_LONG)
+                    .show()
                 finish()
             }
         }
@@ -199,7 +245,7 @@ class VideoRecorder : AppCompatActivity() {
             }.toTypedArray()
     }
 
-    private fun switchCamera2(){
+    private fun switchCamera2() {
 
         viewBinding.changeCameraButton2.setOnClickListener {
 
@@ -219,5 +265,20 @@ class VideoRecorder : AppCompatActivity() {
 
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == RESULT_OK && requestCode == pickImage) {
+            videoUri = data?.data
+            /* imageView.setImageURI(imageUri)*/     // it used to show the image above preview screen
+
+
+            val intent = Intent(this, FullScreenActivity::class.java)
+
+            intent.putExtra("videoUri", videoUri.toString())
+            startActivity(intent)
+
+        }
+
+    }
 }
 
