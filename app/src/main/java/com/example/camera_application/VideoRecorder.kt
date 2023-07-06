@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.camera.core.CameraSelector
 import android.widget.Toast
@@ -208,8 +209,27 @@ class VideoRecorder : AppCompatActivity() {
                 }
 
             }
-
             // end the above code used for flash light
+
+
+            // it is used for zooming the camera    from there::
+            val listener = object : ScaleGestureDetector.SimpleOnScaleGestureListener(){
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+
+                    val scale = camera!!.cameraInfo.zoomState.value!!.zoomRatio * detector.scaleFactor
+                    camera!!.cameraControl.setZoomRatio(scale)
+                    return true
+                }
+            }
+
+            val scaleGestureDetector = ScaleGestureDetector(this,listener)
+
+            viewFinder.setOnTouchListener { _, event ->
+                scaleGestureDetector.onTouchEvent(event)
+                return@setOnTouchListener true
+            }
+
+            // :: from here
 
         }, ContextCompat.getMainExecutor(this))
 

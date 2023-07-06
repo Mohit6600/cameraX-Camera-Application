@@ -3,17 +3,23 @@ package com.example.camera_application
 import android.content.pm.PackageManager
 import android.Manifest
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
+import android.hardware.display.DisplayManager
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.Display
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -22,6 +28,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.camera.view.PreviewView
+import androidx.core.content.ContentProviderCompat.requireContext
 import java.io.File
 import java.lang.Exception
 import java.text.SimpleDateFormat
@@ -38,11 +45,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toggleFlashlight: ImageButton
     private var clickCount = 1
     var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
+    private lateinit var savedUri: Uri
     lateinit var switchCameraBtn: ImageButton
     private val pickImage = 100
     private var imageUri: Uri? = null
-    lateinit var chooseImage:ImageButton
+    lateinit var chooseImage: ImageButton
+
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         viewFinder = findViewById(R.id.viewFinder)
         toggleFlashlight = findViewById(R.id.toggleFlashlight)
         switchCameraBtn = findViewById(R.id.changeCameraButton)
-        chooseImage=findViewById(R.id.chooseImage)
+        chooseImage = findViewById(R.id.chooseImage)
         val videoCam = findViewById<ImageButton>(R.id.videoCam)
 
         if (allPermissionsGranted()) {
@@ -74,18 +84,29 @@ class MainActivity : AppCompatActivity() {
 
         chooseImage.setOnClickListener {
 
-            val gallery = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI)
+            //this code is used for to acces the gallary of the user to see a photo
 
-            startActivityForResult(gallery, pickImage)
+         /*   val gallery = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI)
+
+            startActivityForResult(gallery, pickImage)*/
+
+            // it is used to see the last photo only
+            val intent = Intent(this, ImageFullScreenActivity::class.java)
+
+            intent.putExtra("imageUri", savedUri.toString())
+            startActivity(intent)
+
 
         }
 
-        videoCam.setOnClickListener{
+        videoCam.setOnClickListener {
 
-           val intent = Intent(this,VideoRecorder::class.java)
+            val intent = Intent(this, VideoRecorder::class.java)
             startActivity(intent)
 
         }
+
+
 
 
     }
@@ -111,10 +132,10 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val savedUri = Uri.fromFile(photoFile)
+                     savedUri = Uri.fromFile(photoFile)
 
-                    findViewById<ImageView>(R.id.capture).visibility = View.VISIBLE
-                    findViewById<ImageView>(R.id.capture).setImageURI(savedUri)
+                    findViewById<ImageButton>(R.id.chooseImage).visibility = View.VISIBLE
+                    findViewById<ImageButton>(R.id.chooseImage).setImageURI(savedUri)
 
                     val msg = "photo capture succeded : $savedUri"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_LONG).show()
@@ -127,6 +148,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startCamera(cameraSelector: CameraSelector) {
+
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
@@ -166,8 +188,27 @@ class MainActivity : AppCompatActivity() {
                 }
 
             }
+// it is used for zooming the camera    from there::
+            val listener = object : ScaleGestureDetector.SimpleOnScaleGestureListener(){
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+
+                    val scale = camera!!.cameraInfo.zoomState.value!!.zoomRatio * detector.scaleFactor
+                    camera!!.cameraControl.setZoomRatio(scale)
+                    return true
+                }
+            }
+
+            val scaleGestureDetector = ScaleGestureDetector(this,listener)
+
+            viewFinder.setOnTouchListener { _, event ->
+                scaleGestureDetector.onTouchEvent(event)
+                return@setOnTouchListener true
+            }
+
+            // :: from here
 
         }, ContextCompat.getMainExecutor(this))
+
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSION.all {
@@ -238,12 +279,13 @@ class MainActivity : AppCompatActivity() {
             imageUri = data?.data
             /* imageView.setImageURI(imageUri)*/     // it used to show the image above preview screen
 
+//   //this code is used for to acces the gallary of the user to see a photo
 
-            val intent = Intent(this, ImageFullScreenActivity::class.java)
+       /*     val intent = Intent(this, ImageFullScreenActivity::class.java)
 
             intent.putExtra("imageUri", imageUri.toString())
             startActivity(intent)
-
+*/
         }
 
     }
